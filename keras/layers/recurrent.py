@@ -112,7 +112,9 @@ class SimpleRNN(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
 
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -210,7 +212,9 @@ class SimpleDeepRNN(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
 
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -327,7 +331,9 @@ class GRU(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
 
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -469,7 +475,9 @@ class LSTM(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
 
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -591,7 +599,9 @@ class JZS1(Recurrent):
             non_sequences=[self.U_r, self.U_h],
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -713,7 +723,9 @@ class JZS2(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
 
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
@@ -827,7 +839,9 @@ class JZS3(Recurrent):
             truncate_gradient=self.truncate_gradient,
             go_backwards=self.go_backwards)
         
-        if self.return_sequences:
+        if self.return_sequences and self.go_backwards:
+            return outputs[::-1].dimshuffle((1, 0, 2))
+        elif self.return_sequences:
             return outputs.dimshuffle((1, 0, 2))
         return outputs[-1]
 
