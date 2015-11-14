@@ -527,6 +527,7 @@ class Reshape(Layer):
 
     @property
     def output_shape(self):
+        print self.input_shape
         return (self.input_shape[0],) + self.dims
 
     def get_output(self, train=False):
@@ -588,6 +589,102 @@ class Flatten(Layer):
         nshape = (X.shape[0], size)
         return theano.tensor.reshape(X, nshape)
 
+class SentSengment(MaskedLayer):
+    '''
+        Reshape sentence embedding tensor to chunk tensor
+        (nb_sentences, sen_max_length, wordvec_dim) -> (nb_chunks, chunk_max_length, wordvec_dim)
+        include first dimension which is assumed to be nb_samples.
+        added by chanrom, 11.13.2015
+    
+        :type mask: 2d tensor
+        :param mask: chunk mask for chunk lstm
+        :param transform_shape: (max_chunk_length, wordvec_dim)
+    '''
+    def __init__(self, transform_shape=None, **kwargs):
+        super(SentSengment, self).__init__(**kwargs)
+        self.transform_shape = transform_shape
+
+    @property
+    def output_shape(self):
+        nb_samples = None
+        if (hasattr(self.input_shape, '__len__') and None not in self.input_shape) or \
+           not hasattr(self.input_shape, '__len__'):
+            nb_samples = T.prod(self.input_shape) / T.prod(self.transform_shape)
+        if len(self.transform_shape) == 2 and self.transform_shape[1] is None:
+            self.transform_shape = (self.transform_shape[0], self.input_shape[2])
+        return (nb_samples,) + self.transform_shape
+
+    def get_output_mask(self, train=False):
+         
+        return T.reshape(self.get_input_mask(train), (-1, self.transform_shape[0]))
+
+    def get_output(self, train=False):
+        X = self.get_input(train)
+        if len(self.transform_shape) == 2 and self.transform_shape[1] is None:
+            self.transform_shape = (self.transform_shape[0], X.shape[2])
+        return T.reshape(X, (-1,) + self.transform_shape)
+
+    def get_config(self):
+        config = {"name": self.__class__.__name__,
+                  "transform_shape": self.transform_shape}
+
+        base_config = super(SentSengment, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class ChunkFlatten(MaskedLayer):
+    '''
+        Reshape chunk tensor to sentence tensor
+        include first dimension which is assumed to be nb_samples.
+        added by chanrom, 11.13.2015
+        (nb_chunks, chunvec_dim) -> (nb_chunks/max_chunk_num, max_chunk_num, chunkvec_dim)
+        :param transform: (max_chunk_num, chunkvec_dim)
+    '''
+    def __init__(self, transform_shape=None, **kwargs):
+        super(ChunkFlatten, self).__init__(**kwargs)
+        self.transform_shape = transform_shape
+#        self.chunk_num = chunk_num
+#        self.sent_batch_size = sent_batch_size
+
+    @property
+    def output_shape(self):
+        nb_samples = None
+        #assert self.input_shape[0] % self.chunk_num == 0, "Chunk tensor shape error."
+        if (hasattr(self.input_shape, '__len__') and None not in self.input_shape) or \
+           not hasattr(self.input_shape, '__len__'):
+            nb_samples = T.prod(self.input_shape) / T.prod(self.transform_shape)
+        if len(self.transform_shape) == 2 and self.transform_shape[1] is None:
+            self.transform_shape = (self.transform_shape[0], self.input_shape[1])
+        return (nb_samples,) + self.transform_shape
+        #return (self.input_shape[0] , self.chunk_num, self.input_shape[1])
+
+    def get_output_mask(self, train=False):
+        
+        return T.reshape(T.any(self.get_input_mask(train), axis=1), (-1, self.transform_shape[0]))
+#        print 'get_output_mask'
+#        print self.get_input_mask(train).shape
+#        print T.reshape(self.get_input_mask(train)[:, 1], self.transform_shape[0]).shape
+#        return T.reshape(self.get_input_mask(train)[:, 1], self.trasnform_shape[0])
+
+    def get_output(self, train=False):
+        X = self.get_input(train)
+        # convert 2D data to 3D
+        if len(self.transform_shape) == 2 and self.transform_shape[1] is None:
+            self.transform_shape = (self.transform_shape[0], X.shape[1])
+        return T.reshape(X, (-1,) + self.transform_shape)
+        #X = self.get_input(train)
+        #r, c = X.shape
+        #nray = self.chunk_num
+        
+        #return T.reshape(X.T, (c, r/nray, nray)).dimshuffle(1,2,0)
+        
+
+    def get_config(self):
+        config = {"name": self.__class__.__name__,
+                  "transform_shape": self.transform_shape}
+
+        base_config = super(ChunkFlatten, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
 
 class RepeatVector(Layer):
     '''
