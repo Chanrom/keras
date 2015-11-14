@@ -376,7 +376,7 @@ class LSTM(Recurrent):
                  init='glorot_uniform', inner_init='orthogonal', forget_bias_init='one',
                  activation='tanh', inner_activation='hard_sigmoid',
                  weights=None, truncate_gradient=-1, return_sequences=False,
-                 input_dim=None, input_length=None, go_backwards=False, **kwargs):
+                 input_dim=None, input_length=None, go_backwards=False, keep_mask=False, **kwargs):
         self.output_dim = output_dim
         self.init = initializations.get(init)
         self.inner_init = initializations.get(inner_init)
@@ -387,6 +387,7 @@ class LSTM(Recurrent):
         self.return_sequences = return_sequences
         self.initial_weights = weights
         self.go_backwards = go_backwards
+        self.keep_mask = keep_mask # keep previos mask to the output mask, added by chanrom 11.14.2015
 
         self.input_dim = input_dim
         self.input_length = input_length
@@ -439,6 +440,14 @@ class LSTM(Recurrent):
         h_t = o_t * self.activation(c_t)
         return h_t, c_t
 
+    def get_output_mask(self, train=None):
+        if self.return_sequences:
+            return super(Recurrent, self).get_output_mask(train)
+        elif self.keep_mask:
+            return self.get_input_mask(train)
+        else:   
+            return None
+
     def get_output(self, train=False):
         X = self.get_input(train)
         padded_mask = self.get_padded_shuffled_mask(train, X, pad=1)
@@ -476,7 +485,8 @@ class LSTM(Recurrent):
                   "return_sequences": self.return_sequences,
                   "input_dim": self.input_dim,
                   "input_length": self.input_length,
-                  "go_backwards": self.go_backwards}
+                  "go_backwards": self.go_backwards,
+                  "keep_mask": self.keep_mask}
         base_config = super(LSTM, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
