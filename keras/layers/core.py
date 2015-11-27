@@ -614,8 +614,7 @@ class SentSengment(MaskedLayer):
             self.transform_shape = (self.transform_shape[0], self.input_shape[2])
         return (nb_samples,) + self.transform_shape
 
-    def get_output_mask(self, train=False):
-         
+    def get_output_mask(self, train=False):         
         return T.reshape(self.get_input_mask(train), (-1, self.transform_shape[0]))
 
     def get_output(self, train=False):
@@ -627,7 +626,6 @@ class SentSengment(MaskedLayer):
     def get_config(self):
         config = {"name": self.__class__.__name__,
                   "transform_shape": self.transform_shape}
-
         base_config = super(SentSengment, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
